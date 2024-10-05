@@ -38,13 +38,32 @@ def file_to_data_url(file_path: str):
     
     return f"data:{mime_type};base64,{encoded_string}"
 
+def prompt_pixtral_text(prompt):
+    pixtral_url = "http://localhost:8001/v1/chat/completions"
+    headers = {"Content-Type": "application/json", "Authorization": "Bearer token"}
+    data = {
+        "model": "mistralai/Pixtral-12B-2409",
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                ],
+            }
+        ],
+    }
+
+    response = httpx.post(pixtral_url, headers=headers, json=data)
+
+    # print(response.json())
+    print(response.json()["choices"][0]["message"]["content"])
+    return
 
 
-def prompt_pixtral(screenshot_location):
+def pixtral_explain_screenshot(screenshot_location):
     pixtral_url = "http://localhost:8001/v1/chat/completions"
     # base64_image = encode_image(screenshot_location)
     image_source = file_to_data_url(screenshot_location)
-
 
     headers = {"Content-Type": "application/json", "Authorization": "Bearer token"}
     data = {

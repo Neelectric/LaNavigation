@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title_block %}
+Homepage
+{% endblock %}
+
+{% block body_block %}
+<!-- Bootstrap CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+
+<a href="#main" class="visually-hidden-focusable">Skip to main content</a>
+
+<div class="gradient-background">
+    <div class="container-fluid py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 text-center">
+                    <h1 class="display-4 mb-4">Accessible Web Navigation</h1>
+                    <div class="bg-white rounded p-4 text-start shadow-sm">
+
+                        <md-block>{{ response }}</md-block>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block script_block %}
+<script type="module" src="https://md-block.verou.me/md-block.js"></script>
+{% endblock %}

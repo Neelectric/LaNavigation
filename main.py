@@ -11,7 +11,7 @@ import torch
 
 # Local imports
 from src.screenshot import capture_website_screenshot
-from src.pixtral_prompting import prompt_pixtral
+from src.pixtral_prompting import pixtral_explain_screenshot
 
 
 # explanation function
@@ -24,7 +24,7 @@ def explain(url):
     except:
         print("Taking a screenshot seems to have failed")
     screenshot_location = "./" + screenshot_location
-    explanation = prompt_pixtral(screenshot_location)
+    explanation = pixtral_explain_screenshot(screenshot_location)
 
     return explanation
 

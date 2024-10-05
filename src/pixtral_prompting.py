@@ -1,27 +1,70 @@
+### Any interactions with pixtral are contained in this file
+###
+###
+
+# System imports
 import httpx
+import base64
+import requests
+import os
 
-url = "http://localhost:8000/v1/chat/completions"
-headers = {"Content-Type": "application/json", "Authorization": "Bearer token"}
-data = {
-    "model": "mistralai/Pixtral-12B-2409",
-    "messages": [
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "Describe this image in a short sentence."},
-                {
-                    "type": "image_url",
-                    "image_url": {"url": "https://picsum.photos/id/237/200/300"},
-                },
-            ],
-        }
-    ],
-}
+# External imports
+from mistralai import Mistral
 
-response = httpx.post(url, headers=headers, json=data)
+# Local imports
 
-print(response.json())
+# taken directly from https://docs.mistral.ai/capabilities/vision/, allows us to encode an image to base64 given path
+def encode_image(image_path):
+    """Encode the image to base64."""
+    try:
+        with open(image_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode('utf-8')
+    except FileNotFoundError:
+        print(f"Error: The file {image_path} was not found.")
+        return None
+    except Exception as e:  # Added general exception handling
+        print(f"Error: {e}")
+        return None
+    
+def file_to_data_url(file_path: str):
+    """
+    Convert a local image file to a data URL.
+    """    
+    with open(file_path, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+    
+    _, extension = os.path.splitext(file_path)
+    mime_type = f"image/{extension[1:].lower()}"
+    
+    return f"data:{mime_type};base64,{encoded_string}"
 
-def prompt_pixtral(url):
+
+
+def prompt_pixtral(screenshot_location):
     explanation = ""
+    pixtral_url = "http://localhost:8000/v1/chat/completions"
+    # base64_image = encode_image(screenshot_location)
+    image_source = file_to_data_url(screenshot_location)
+
+
+    headers = {"Content-Type": "application/json", "Authorization": "Bearer token"}
+    data = {
+        "model": "mistralai/Pixtral-12B-2409",
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Describe this image in a short sentence."},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": image_source} ,
+                    },
+                ],
+            }
+        ],
+    }
+
+    response = httpx.post(pixtral_url, headers=headers, json=data)
+
+    print(response.json())
     return explanation

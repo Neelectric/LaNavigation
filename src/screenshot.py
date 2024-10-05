@@ -17,7 +17,7 @@ async def take_screenshot(url, output_file):
     # Close the browser
     await browser.close()
 
-def capture_website_screenshot(url, output_file='screenshot.png'):
+def capture_website_screenshot(url, output_file='screenshots/screenshot.png'):
     asyncio.get_event_loop().run_until_complete(take_screenshot(url, output_file))
 
 # Example usage:

@@ -1,28 +1,23 @@
-from vllm import LLM
-from vllm.sampling_params import SamplingParams
 
-model_name = "mistralai/Pixtral-12B-2409"
-max_img_per_msg = 3
+# System imports
+import time
 
-sampling_params = SamplingParams(max_tokens=8192)
-llm = LLM(
-    model=model_name,
-    tokenizer_mode="mistral",
-    load_format="mistral",
-    config_format="mistral",
-    limit_mm_per_prompt={"image": max_img_per_msg},
-)
+# External imports
+from lavague.core import WorldModel, ActionEngine, PythonEngine
+from lavague.core.agents import WebAgent
+from lavague.drivers.selenium import SeleniumDriver
+from llama_index.llms.mistralai import MistralAI
 
-urls = [f"https://picsum.photos/id/{id}/512/512" for id in ["1", "11", "111"]]
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from load_config import load_key
 
-messages = [
-    {
-        "role": "user",
-        "content": [
-            {"type": "text", "text": "Describe this image"},
-            ] + [{"type": "image_url", "image_url": {"url": f"{u}"}} for u in urls],
-    },
-]
+time_before = time.time()
 
-res = llm.chat(messages=messages, sampling_params=sampling_params)
-print(res[0].outputs[0].text)
+mistral_api_key = load_key("mistral_key", file='Neel_config.yaml')
+
+# define our LLMs
+llm = MistralAI(model="mistral-large-latest", api_key=mistral_api_key)
+resp = llm.complete("Paul Graham is ")
+print(resp)
+time_after = time.time()
+print("Time taken: ", time_after - time_before)

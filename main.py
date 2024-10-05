@@ -31,5 +31,5 @@ def explain(url):
 
 # Example usage:
 if __name__ == "__main__":
-    website_url = "https://www.vrk.lt/en/home"
+    website_url = "https://en.wikipedia.org/wiki/Donald_Trump"
     explain(website_url)

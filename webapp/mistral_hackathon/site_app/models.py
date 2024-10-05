@@ -13,10 +13,6 @@ class Output(models.Model):
     def __str__(self):
         return self.name
     
-class Transcription(models.Model):
-    audio_file = models.FileField(upload_to='audio/')
-    text = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.text[:50]
+class AudioFile(models.Model):
+    audio = models.FileField(upload_to='audio_files/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)

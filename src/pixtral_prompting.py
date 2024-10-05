@@ -54,10 +54,11 @@ def prompt_pixtral_text(prompt):
     }
 
     response = httpx.post(pixtral_url, headers=headers, json=data)
+    content = response.json()["choices"][0]["message"]["content"]
 
     # print(response.json())
-    print(response.json()["choices"][0]["message"]["content"])
-    return
+    # print(content)
+    return content
 
 
 def pixtral_explain_screenshot(screenshot_location):

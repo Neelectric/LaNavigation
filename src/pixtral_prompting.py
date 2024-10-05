@@ -51,6 +51,7 @@ def prompt_pixtral_text(prompt):
                 ],
             }
         ],
+        "temperature": 0.01,
     }
 
     response = httpx.post(pixtral_url, headers=headers, json=data)
@@ -58,6 +59,33 @@ def prompt_pixtral_text(prompt):
 
     # print(response.json())
     # print(content)
+    return content
+
+def prompt_pixtral_text_and_image(prompt, screenshot_location):
+    pixtral_url = "http://localhost:8001/v1/chat/completions"
+    # base64_image = encode_image(screenshot_location)
+    image_source = file_to_data_url(screenshot_location)
+
+    headers = {"Content-Type": "application/json", "Authorization": "Bearer token"}
+    data = {
+        "model": "mistralai/Pixtral-12B-2409",
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": image_source} ,
+                    },
+                ],
+            }
+        ],
+        "temperature": 0.01,
+    }
+    response = httpx.post(pixtral_url, headers=headers, json=data)
+    content = response.json()["choices"][0]["message"]["content"]
+
     return content
 
 

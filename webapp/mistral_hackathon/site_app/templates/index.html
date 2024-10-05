@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title_block %}
+Homepage
+{% endblock %}
+
+{% block body_block %}
+
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <button id="optionsBtn" class="btn btn-light rounded-circle p-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg>
+            </button>
+        </div>
+        <div class="col text-center">
+            <h1 class="text-white">Explain.me</h1>
+        </div>
+        <div class="col"></div>
+    </div>
+
+    <div class="text-center mb-4">
+        {% csrf_token %}
+        <button id="inputBtn" class="btn btn-primary input-circle">
+            <span class="h4 mb-0">Input</span>
+        </button>
+    </div>
+
+    <div class="message-container rounded p-3">
+        <div class="d-flex flex-column" id="messageList">
+            {% for message in messages %}
+            <div class="{% if message.type == 'user' %}user-message{% else %}model-message{% endif %}">
+                {{ message.content }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Audio player -->
+<audio id="audioPlayer" controls style="display:none;">
+    <source id="audioSource" src="" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+
+
+{% endblock %}
+
+{% block script_block %}
+<script type="text/javascript" src="{% static 'js/home.js' %}"></script>
+{% endblock %}

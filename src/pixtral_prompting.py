@@ -41,8 +41,7 @@ def file_to_data_url(file_path: str):
 
 
 def prompt_pixtral(screenshot_location):
-    explanation = ""
-    pixtral_url = "http://localhost:8000/v1/chat/completions"
+    pixtral_url = "http://localhost:8001/v1/chat/completions"
     # base64_image = encode_image(screenshot_location)
     image_source = file_to_data_url(screenshot_location)
 
@@ -54,7 +53,7 @@ def prompt_pixtral(screenshot_location):
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "Describe this image in a short sentence."},
+                    {"type": "text", "text": "You are a helpful assistant that guides visually impaired people through websites. The following is a screenshot taken from a website that a user has navigated to. Please first provide a brief summary of the whole page. Then, generate a detailed description of all of the content on the website, taking special care to provide all information that a visually impaired person might be interested in. Skip any content that may be unnecessary or irrelevant."},
                     {
                         "type": "image_url",
                         "image_url": {"url": image_source} ,
@@ -66,5 +65,6 @@ def prompt_pixtral(screenshot_location):
 
     response = httpx.post(pixtral_url, headers=headers, json=data)
 
-    print(response.json())
-    return explanation
+    # print(response.json())
+    print(response.json()["choices"][0]["message"]["content"])
+    return response.json()

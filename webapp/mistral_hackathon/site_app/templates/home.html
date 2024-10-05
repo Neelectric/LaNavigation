@@ -1,0 +1,36 @@
+{% extends 'base.html' %} 
+{% load static %} 
+
+{% block title_block %}
+Homepage 
+{% endblock %} 
+
+{% block body_block %} 
+<!-- Bootstrap CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+
+<a href="#main" class="visually-hidden-focusable">Skip to main content</a>
+
+<div class="gradient-background">
+  <div class="container-fluid py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+          <h1 class="display-4 mb-4">Accessible Web Navigation</h1>
+          
+            <form  class="input-group input-group-lg mb-3 rounded-pill border overflow-hidden" action="{% url 'search' %}" method="post">
+              {% csrf_token %}
+            <input type="text" class="form-control border-0" placeholder="Enter your search" aria-label="Search" name="q">
+            <input class="btn btn-outline-secondary px-4 border-0 fw-bold" type="submit" label="Go">
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %} 
+
+{% block script_block %}
+{% endblock %}

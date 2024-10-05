@@ -2,57 +2,18 @@
 from lavague.core import WorldModel, ActionEngine, PythonEngine
 from lavague.core.agents import WebAgent
 from lavague.drivers.selenium import SeleniumDriver
-from typing import Optional, List, Mapping, Any
 from llama_index.llms.mistralai import MistralAI
 
-from llama_index.core import SimpleDirectoryReader, SummaryIndex
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core.llms import (
-    CustomLLM,
-    CompletionResponse,
-    CompletionResponseGen,
-    LLMMetadata,
-)
-from llama_index.core.llms.callbacks import llm_completion_callback
-from llama_index.core import Settings
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from src.pixtral_prompting import prompt_pixtral_text
+from src.load_config import load_key
+from src.pixtral_wrapper import PixtralWrapper
 
 
-class OurLLM(CustomLLM):
-    context_window: int = 128000
-    num_output: int = 8192 * 4
-    dummy_response: str = "My response"
+mistral_api_key = load_key("mistral_key", file='Neel_config.yaml')
 
-    @property
-    def metadata(self) -> LLMMetadata:
-        """Get LLM metadata."""
-        return LLMMetadata(
-            context_window=self.context_window,
-            num_output=self.num_output,
-        )
-
-    @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        for i in range(5):
-            output = prompt_pixtral_text(prompt)
-            if output is not None:
-                break
-        print(output)
-        return CompletionResponse(text=output)
-
-    @llm_completion_callback()
-    def stream_complete(
-        self, prompt: str, **kwargs: Any
-    ) -> CompletionResponseGen:
-        response = ""
-        for token in self.dummy_response:
-            response += token
-            yield CompletionResponse(text=response, delta=token)
-
-
-# define our LLM
-mm_llm = OurLLM()
+# define our LLMs
+llm = MistralAI(model="mistral-large-latest", api_key=mistral_api_key)
+mm_llm = PixtralWrapper()
 embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
 
 
@@ -60,14 +21,14 @@ embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
 selenium_driver = SeleniumDriver()
 python_engine = PythonEngine(
     driver=selenium_driver,
-    llm=mm_llm,
+    llm=llm,
     embedding=embed_model,
     ocr_mm_llm=mm_llm
     )
 
 # Initialize a WorldModel and ActionEngine passing them your models
 world_model = WorldModel(mm_llm=mm_llm)
-action_engine = ActionEngine(driver=selenium_driver, llm=mm_llm, embedding=embed_model, python_engine=python_engine)
+action_engine = ActionEngine(driver=selenium_driver, llm=llm, embedding=embed_model, python_engine=python_engine)
 
 # Create your agent
 agent = WebAgent(world_model, action_engine)

@@ -48,8 +48,6 @@ def load_and_play_audio():
     return gr.Audio.update(value=audio_file, autoplay=True)
 
 def transcribe(audio):
-    print("transcribe called")
-    print(audio)
     sr, y = audio
     
     # Convert to mono if stereo
@@ -58,7 +56,6 @@ def transcribe(audio):
         
     y = y.astype(np.float32)
     y /= np.max(np.abs(y))
-    print("transcribe jover")
 
     return "https://www." + transcriber({"sampling_rate": sr, "raw": y})["text"].strip(".").replace(" ", "")
 
@@ -73,6 +70,10 @@ def transcribe_objective(audio):
     y /= np.max(np.abs(y))
 
     return transcriber({"sampling_rate": sr, "raw": y})["text"]
+
+def debug_func(input, x=None):
+    print(input)
+    return input, x
 
 class GradioAgentDemo:
     """
@@ -115,26 +116,53 @@ class GradioAgentDemo:
     """
 
     js = """
-    // Function to add the animation when the spacebar is pressed
     function addAnimation() {
-        // Listen for keydown events
-        document.addEventListener('keydown', function(event) {
-            // Check if the pressed key is the spacebar (key code 32)
-            if (event.code === 'Space') {
-                event.preventDefault(); // Prevent the default space action (scrolling)
-                const buttons = document.querySelectorAll('.record.record-button.svelte-1d9m1oy');
-
-                // Check if any buttons were found
-                if (buttons.length > 0) {
-                    // Click the first button
-                    buttons[0].click();
-                } else {
-                    console.log('No buttons found with the specified class.');
+    // Listen for keydown events
+    document.addEventListener('keydown', function(event) {
+        // Re-query the buttons every time to ensure up-to-date results
+        const buttons = document.querySelectorAll('.record.record-button.svelte-1d9m1oy');
+        console.log('Buttons:', buttons);
+        // Check if Shift + Spacebar is pressed
+        if (event.code === 'Space' && event.shiftKey) {
+            event.preventDefault(); // Prevent default space action (scrolling)
+            // Check if any buttons were found
+            if (buttons.length > 0) {
+                // Click the first button
+                buttons[0].click();
+                const closeButton = document.querySelector('.svelte-rk35yg.padded');
+                if (closeButton.length > 0) {
+                    closeButton[0].click();
                 }
+            } else {
+                console.log('No buttons found with the specified class.');
             }
-            return 'Animation created';
-        });
-    }
+        } 
+        // Check if Shift + B is pressed
+        else if (event.code === 'KeyB' && event.shiftKey) {
+            event.preventDefault(); // Prevent default action
+
+            // Check if there are at least two buttons to avoid out-of-bound errors
+            if (buttons.length > 1) {
+                // Click the second button
+                buttons[1].click();
+            } else {
+                console.log('No second button found with the specified class.');
+            }
+        } 
+        // Check if Shift + N is pressed (for the last button)
+        else if (event.code === 'KeyN' && event.shiftKey) {
+            event.preventDefault(); // Prevent default action
+            const buttons = document.querySelectorAll('.play-pause-button.icon.svelte-ije4bl');
+
+            // Check if any buttons were found and click the last one
+            if (buttons.length > 0) {
+                buttons[buttons.length - 1].click();
+            } else {
+                console.log('No play-pause buttons found.');
+            }
+        }
+    });
+}
     """
 
     def __init__(

@@ -153,16 +153,30 @@ class GradioAgentDemo:
             return url, img
 
         return init_driver_impl
+    
+    def play_audio(self):
+        def play_audio(chatbot):
+            print(chatbot)
+            filename = generate_and_play_tts(chatbot[-1]["content"])
+            audio_file = gr.Audio(value=filename, autoplay=True, label="Play Audio File", visible=True)
+            return audio_file
+
+        return play_audio
 
     def _process_instructions(self):
-        def process_instructions_impl(objective, url_input, image_display, history):
+        def process_instructions_impl(objective, url_input, image_display, history, audio_file):
             msg = gr.ChatMessage(
                 role="assistant", content="⏳ Thinking of next steps..."
             )
             history.append(msg)
-            yield objective, url_input, image_display, history
+
+            print(history)
+            filename = generate_and_play_tts(history[-1].content)
+            audio_file = gr.Audio(value=filename, autoplay=True, label="Play Audio File", visible=True)
+
+            yield objective, url_input, image_display, history, audio_file
             self.agent.action_engine.set_gradio_mode_all(
-                True, objective, url_input, image_display, history
+                True, objective, url_input, image_display, history, 
             )
             self.agent.clean_screenshot_folder = False
             yield from self.agent._run_demo(
@@ -176,7 +190,7 @@ class GradioAgentDemo:
                 self.screenshot_ratio,
             )
 
-            return objective, url_input, image_display, history
+            return objective, url_input, image_display, history, audio_file
 
         return process_instructions_impl
 
@@ -235,6 +249,8 @@ class GradioAgentDemo:
                                 visible=True,
                                 max_lines=1,
                             )
+
+                        audio_file = gr.Audio(label="Play Audio File", visible=True)
                 with gr.Row(variant="panel", equal_height=True):
                     with gr.Column(scale=8):
                         image_display = gr.Image(
@@ -252,10 +268,10 @@ class GradioAgentDemo:
                             layout="bubble",
                         )
 
-                print(chatbot.value)
-                if len(chatbot.value) > 0:
-                    filename = generate_and_play_tts(chatbot[-1].content)
-                    audio_file = gr.Audio(value="filename", autoplay=True, label="Play Audio File", visible=True)
+                # print(chatbot.value)
+                # if len(chatbot.value) > 0:
+                #     filename = generate_and_play_tts(chatbot[-1].content)
+                #     audio_file = gr.Audio(value="filename", autoplay=True, label="Play Audio File", visible=True)
 
                 # Automatically submit the transcription after it's received
                 audio_input.change(fn=transcribe, inputs=audio_input, outputs=transcription_output).then(
@@ -279,12 +295,14 @@ class GradioAgentDemo:
                         transcription_output,
                         image_display,
                         chatbot,
+                        audio_file,
                     ],
                     outputs=[
                         transcription_output_objective,
                         transcription_output,
                         image_display,
                         chatbot,
+                        audio_file,
                     ],
                 )
 
@@ -328,4 +346,4 @@ action_engine = ActionEngine(driver=selenium_driver, llm=llm, embedding=embed_mo
 agent = WebAgent(world_model, action_engine)
 
 grad = GradioAgentDemo("", "", agent)
-grad.launch(server_port=7895, share=True, debug=True)
+grad.launch(server_port=8000, share=True, debug=True)

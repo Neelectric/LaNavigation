@@ -71,6 +71,10 @@ def transcribe_objective(audio):
 
     return transcriber({"sampling_rate": sr, "raw": y})["text"]
 
+def debug_func(input, x=None):
+    print(input)
+    return input, x
+
 class GradioAgentDemo:
     """
     Launch an agent gradio demo of lavague
@@ -117,10 +121,40 @@ class GradioAgentDemo:
         // Listen for keydown events
         document.addEventListener('keydown', function(event) {
             // Check if the pressed key is the spacebar (key code 32)
-            if (event.code === 'Space') {
+            if (event.code === 'Space' && event.shiftKey) {
                 event.preventDefault(); // Prevent the default space action (scrolling)
-                console.log('Spacebar pressed');
-                document.getElementById('audio-input').submit();
+                const buttons = document.querySelectorAll('.record.record-button.svelte-1d9m1oy');
+
+                // Check if any buttons were found
+                if (buttons.length > 0) {
+                    // Click the first button
+                    buttons[0].click();
+                } else {
+                    console.log('No buttons found with the specified class.');
+                }
+            } else if (event.code === 'KeyB' && event.shiftKey) {
+                event.preventDefault(); // Prevent the default space action (scrolling)
+                const buttons = document.querySelectorAll('.record.record-button.svelte-1d9m1oy');
+
+                // Check if any buttons were found
+                if (buttons.length > 1) {
+                    // Click the first button
+                    buttons[1].click();
+                } else {
+                    console.log('No buttons found with the specified class.');
+                }
+            } else if (event.code === 'KeyN' && event.shiftKey) {
+                event.preventDefault(); // Prevent the default space action (scrolling)
+                const buttons = document.querySelectorAll('play-pause-button icon svelte-ije4bl');
+
+
+                // Check if any buttons were found
+                if (buttons.length > 0) {
+                    // Click the first button
+                    buttons[0].click();
+                } else {
+                    console.log('No buttons found with the specified class.');
+                }
             }
             return 'Animation created';
         });
@@ -144,13 +178,16 @@ class GradioAgentDemo:
 
     def _init_driver(self):
         def init_driver_impl(url, img):
-            self.agent.get(url)
+            prompt = "The following URL was collected with a microphone from a user. It might be noisy. If it seems like a valid url, repeat it back and don't say anything else. If not, provide the URL the user likely tried to navigate to, and nothing else. Either way, produce nothing but a precise URL. '" + url + "'"
+            verified_url = self.verifier.complete(prompt)
+            self.agent.get(verified_url)
+            
 
             ret = self.agent.action_engine.driver.get_screenshot_as_png()
             ret = BytesIO(ret)
             ret = Image.open(ret)
             img = ret
-            return url, img
+            return verified_url, img
 
         return init_driver_impl
 
@@ -303,7 +340,7 @@ selenium_driver = SeleniumDriver()
 llm = MistralAI(model="mistral-large-latest", api_key=mistral_api_key, temperature=0.01)
 # llm = Gemini(model_name="models/gemini-1.5-flash-latest", temperature=0.01)
 mm_llm = GeminiMultiModal(model_name="models/gemini-1.5-flash-latest", api_key=google_api_key, temperature=0.01)
-# llm = PixtralWrapper()
+pixtral = PixtralWrapper()
 embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-large-en-v1.5")
 
 context = Context(llm, mm_llm=mm_llm, embedding=embed_model)
@@ -325,4 +362,5 @@ action_engine = ActionEngine(driver=selenium_driver, llm=llm, embedding=embed_mo
 agent = WebAgent(world_model, action_engine)
 
 grad = GradioAgentDemo("", "", agent)
-grad.launch(server_port=7894, share=True, debug=True)
+grad.verifier = pixtral
+grad.launch(server_port=7900, share=True, debug=True)

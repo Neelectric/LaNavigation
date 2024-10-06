@@ -465,4 +465,4 @@ agent = WebAgent(world_model, action_engine)
 
 grad = GradioAgentDemo("", "", agent)
 grad.verifier = pixtral
-grad.launch(server_port=7901, share=True, debug=True)
+grad.launch(server_port=8502, share=True, debug=True)

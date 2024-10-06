@@ -43,6 +43,10 @@ def generate_and_play_tts(text, filename='welcome.mp3'):
 
     return filename
 
+def load_and_play_audio():
+    audio_file = generate_and_play_tts("Hello")
+    return gr.Audio.update(value=audio_file, autoplay=True)
+
 def transcribe(audio):
     sr, y = audio
     
@@ -66,6 +70,10 @@ def transcribe_objective(audio):
     y /= np.max(np.abs(y))
 
     return transcriber({"sampling_rate": sr, "raw": y})["text"]
+
+def debug_func(input, x=None):
+    print(input)
+    return input, x
 
 class GradioAgentDemo:
     """
@@ -278,15 +286,6 @@ function handleKeyboardEvents() {
             return verified_url, img
 
         return init_driver_impl
-    
-    def _play_audio(self):
-        def play_audio(chatbot):
-            print(chatbot)
-            filename = generate_and_play_tts(chatbot[-1]["content"])
-            audio_file = gr.Audio(value=filename, autoplay=True, label="Play Audio File", visible=True)
-            return audio_file
-
-        return play_audio
 
     def _process_instructions(self):
         def process_instructions_impl(objective, url_input, image_display, history):
@@ -296,10 +295,9 @@ function handleKeyboardEvents() {
             history.append(msg)
             yield objective, url_input, image_display, history
             self.agent.action_engine.set_gradio_mode_all(
-                True, objective, url_input, image_display, history, 
+                True, objective, url_input, image_display, history
             )
             self.agent.clean_screenshot_folder = False
-
             yield from self.agent._run_demo(
                 objective,
                 self.user_data,
@@ -370,8 +368,6 @@ function handleKeyboardEvents() {
                                 visible=True,
                                 max_lines=1,
                             )
-
-                        audio_file = gr.Audio(label="Play Audio File", visible=True, autoplay=True)
                 with gr.Row(variant="panel", equal_height=True):
                     with gr.Column(scale=8):
                         image_display = gr.Image(
@@ -418,11 +414,9 @@ function handleKeyboardEvents() {
                         image_display,
                         chatbot,
                     ],
-                ).then(
-                    self._play_audio(),
-                    inputs=[chatbot],
-                    outputs=[audio_file],
                 )
+
+                audio_file = gr.Audio(value="welcome.mp3", autoplay=True, label="Play Audio File", visible=True)
 
                 if self.agent.driver.get_url() is not None:
                     demo.load(

@@ -117,90 +117,141 @@ class GradioAgentDemo:
     """
 
     js = """
-function addAnimation() {
-    // Listen for keydown events
+function handleKeyboardEvents() {
+    let isProcessingUrl = false;
+    let isProcessingObjective = false;
+
     document.addEventListener('keydown', function(event) {
-        
-        // Get the input state element
-        const inputState = document.getElementById('inputState');
-        console.log(inputState);
-
-        // Check if Shift + Spacebar is pressed
+        // Handle Shift + Spacebar
         if (event.code === 'Space' && event.shiftKey) {
-            event.preventDefault(); // Prevent default space action (scrolling)
+            event.preventDefault();
 
-            // Get the current URL state
-            const urlState = inputState.getAttribute('url');
+            if (isProcessingUrl) {
+                console.log('Still processing previous URL action');
+                return;
+            }
+            isProcessingUrl = true;
 
-            // Get buttons
+            const inputState = document.getElementById('inputState');
+            const urlState = inputState.getAttribute('url') || 'empty';
             const urlInput = document.querySelector('#url-input');
-            const urlButtons = urlInput.querySelectorAll('.record.record-button.svelte-1d9m1oy');
-            const urlButtonClose = urlInput.querySelectorAll('.svelte-rk35yg.padded');
 
-            console.log(urlInput, urlButtons, urlButtonClose);
+            if (!urlInput) {
+                console.log('URL input container not found');
+                isProcessingUrl = false;
+                return;
+            }
 
-            if (urlState === 'empty') {
-                if (urlButtons.length > 0) {
-                    // Click the first button
-                    urlButtons[0].click();
-                    // Update the state to 'used'
-                    inputState.setAttribute('url', 'used'); // Fixed here to set on inputState
-                } else {
-                    console.log('No buttons found with the specified class.');
-                }
-            } else {
-                if (urlButtonClose.length > 0) {
-                    console.log('Closing the button...');
-                    urlButtonClose[0].click();
+            function findAndClickUrlButtons() {
+                const urlButtonClose = urlInput.querySelectorAll('.svelte-rk35yg.padded');
+                const urlButtons = urlInput.querySelectorAll('.record.record-button.svelte-1d9m1oy');
 
-                    // After closing, try to find and click the record button again
-                    const newUrlButtons = urlInput.querySelectorAll('.record.record-button.svelte-1d9m1oy');
-                    if (newUrlButtons.length > 0) {
-                        newUrlButtons[0].click();
+                if (urlState === 'empty') {
+                    if (urlButtons.length > 0) {
+                        console.log('Starting URL Input');
+                        urlButtons[0].click();
+                        inputState.setAttribute('url', 'in-use');
+                        isProcessingUrl = false;
                     } else {
-                        console.log('No buttons found with the specified class.');
+                        console.log('URL button not found for initial click');
+                        setTimeout(findAndClickUrlButtons, 100);
                     }
-                } else {
-                    console.log('No close buttons found with the specified class.');
+                } else if (urlState === 'in-use') {
+                    if (urlButtonClose.length > 0) {
+                        console.log('Closing URL input');
+                        urlButtonClose[0].click();
+                        
+                        setTimeout(() => {
+                            const newUrlButtons = urlInput.querySelectorAll('.record.record-button.svelte-1d9m1oy');
+                            if (newUrlButtons.length > 0) {
+                                console.log('Restarting URL Input');
+                                newUrlButtons[0].click();
+                            } else {
+                                console.log('URL button not found for restart');
+                                inputState.setAttribute('url', 'empty');
+                            }
+                            isProcessingUrl = false;
+                        }, 500);
+                    } else {
+                        console.log('Close button not found');
+                        isProcessingUrl = false;
+                    }
                 }
             }
+
+            findAndClickUrlButtons();
         } 
-        // Check if Shift + B is pressed
+        // Handle Shift + B with similar logic
         else if (event.code === 'KeyB' && event.shiftKey) {
-            event.preventDefault(); // Prevent default action
+            event.preventDefault();
 
-            // Get objective state
-            const objectiveState = inputState.getAttribute('objective');
-
-            // Get buttons
-            const objectiveInput = document.querySelector('#objective-input');
-            const objectiveButtons = objectiveInput.querySelectorAll('.record.record-button.svelte-1d9m1oy');
-            const objectiveButtonClose = objectiveInput.querySelectorAll('.svelte-rk35yg.padded');
-
-            console.log(objectiveInput, objectiveButtons, objectiveButtonClose);
-
-            if (objectiveButtons.length > 0) {
-                // Click the first button
-                objectiveButtons[0].click();
-            } else {
-                console.log('No second button found with the specified class.');
+            if (isProcessingObjective) {
+                console.log('Still processing previous objective action');
+                return;
             }
-        } 
-        // Check if Shift + N is pressed (for the last button)
-        else if (event.code === 'KeyN' && event.shiftKey) {
-            event.preventDefault(); // Prevent default action
-            const buttons = document.querySelectorAll('.play-pause-button.icon.svelte-ije4bl');
+            isProcessingObjective = true;
 
-            // Check if any buttons were found and click the last one
+            const inputState = document.getElementById('inputState');
+            const objectiveState = inputState.getAttribute('objective') || 'empty';
+            const objectiveInput = document.querySelector('#objective-input');
+
+            if (!objectiveInput) {
+                console.log('Objective input container not found');
+                isProcessingObjective = false;
+                return;
+            }
+
+            function findAndClickObjectiveButtons() {
+                const objectiveButtonClose = objectiveInput.querySelectorAll('.svelte-rk35yg.padded');
+                const objectiveButtons = objectiveInput.querySelectorAll('.record.record-button.svelte-1d9m1oy');
+
+                if (objectiveState === 'empty') {
+                    if (objectiveButtons.length > 0) {
+                        console.log('Starting Objective Input');
+                        objectiveButtons[0].click();
+                        inputState.setAttribute('objective', 'in-use');
+                        isProcessingObjective = false;
+                    } else {
+                        console.log('Objective button not found for initial click');
+                        setTimeout(findAndClickObjectiveButtons, 100);
+                    }
+                } else if (objectiveState === 'in-use') {
+                    if (objectiveButtonClose.length > 0) {
+                        console.log('Closing Objective input');
+                        objectiveButtonClose[0].click();
+                        
+                        setTimeout(() => {
+                            const newObjectiveButtons = objectiveInput.querySelectorAll('.record.record-button.svelte-1d9m1oy');
+                            if (newObjectiveButtons.length > 0) {
+                                console.log('Restarting Objective Input');
+                                newObjectiveButtons[0].click();
+                            } else {
+                                console.log('Objective button not found for restart');
+                                inputState.setAttribute('objective', 'empty');
+                            }
+                            isProcessingObjective = false;
+                        }, 500);
+                    } else {
+                        console.log('Objective close button not found');
+                        isProcessingObjective = false;
+                    }
+                }
+            }
+
+            findAndClickObjectiveButtons();
+        } 
+        // Handle Shift + N
+        else if (event.code === 'KeyN' && event.shiftKey) {
+            event.preventDefault();
+            const buttons = document.querySelectorAll('.play-pause-button.icon.svelte-ije4bl');
             if (buttons.length > 0) {
                 buttons[buttons.length - 1].click();
             } else {
                 console.log('No play-pause buttons found.');
             }
         }
-    }); // Added closing bracket for event listener
-}
-    """
+    });
+}    """
 
     def __init__(
         self,

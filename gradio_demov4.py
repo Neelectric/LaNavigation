@@ -2,7 +2,7 @@ from io import BytesIO
 import queue
 from typing import List, Optional
 from lavague.core import  WorldModel, ActionEngine
-from lavague.core.agents import WebAgent, logging_print
+from lavague.core.agents import WebAgent
 import gradio as gr
 from PIL import Image
 from lavague.contexts.gemini import GeminiContext
@@ -42,10 +42,6 @@ def generate_and_play_tts(text, filename='welcome.mp3'):
         file.write(data)
 
     return filename
-
-def load_and_play_audio():
-    audio_file = generate_and_play_tts("Hello")
-    return gr.Audio.update(value=audio_file, autoplay=True)
 
 def transcribe(audio):
     sr, y = audio
@@ -170,10 +166,6 @@ class GradioAgentDemo:
             )
             history.append(msg)
 
-            print(logging_print)
-            # filename = generate_and_play_tts(history_global[-1].content)
-            # audio_file = gr.Audio(value=filename, autoplay=True, label="Play Audio File", visible=True)
-
             yield objective, url_input, image_display, history, audio_file
             self.agent.action_engine.set_gradio_mode_all(
                 True, objective, url_input, image_display, history, 
@@ -189,6 +181,10 @@ class GradioAgentDemo:
                 history,
                 self.screenshot_ratio,
             )
+
+            # print(history)
+            # filename = generate_and_play_tts(history[-1]["content"])
+            # audio_file = gr.Audio(value=filename, autoplay=True, label="Play Audio File", visible=True)
 
             return objective, url_input, image_display, history, audio_file
 

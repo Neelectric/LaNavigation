@@ -104,8 +104,10 @@ class GradioAgentDemo:
     title = """
     <div class='parent' align="center">
     <div class='child' style="display: inline-block !important;">
-    <img src="images/announcing-mistral.png" width="40px"/>
-    <h1>LaNavigation</h1>
+    <div style="display: flex; align-items: center;">
+    <img src="/file/announcing-mistral.png" width="100px" style="margin-right: 10px;" />
+    <h1 style="font-size: 48px;">LaNavigation</h1>
+    </div>
     </div>
     </div>
     """
@@ -331,7 +333,7 @@ class GradioAgentDemo:
                         outputs=[transcription_output, image_display],
                         show_progress=False,
                     )
-        demo.launch(server_port=server_port, share=True, debug=True)
+        demo.launch(server_port=server_port, share=True, debug=True, allowed_paths=["announcing-mistral.png"])
 
 
 

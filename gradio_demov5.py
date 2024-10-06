@@ -104,6 +104,7 @@ class GradioAgentDemo:
     title = """
     <div class='parent' align="center">
     <div class='child' style="display: inline-block !important;">
+    <img src="images/announcing-mistral.png" width="40px"/>
     <h1>LaNavigation</h1>
     </div>
     </div>
@@ -178,8 +179,9 @@ class GradioAgentDemo:
 
     def _init_driver(self):
         def init_driver_impl(url, img):
-            prompt = "The following URL was collected with a microphone from a user. It might be noisy. If it seems like a valid url, repeat it back and don't say anything else. If not, provide the URL the user likely tried to navigate to, and nothing else. Either way, produce nothing but a precise URL. '" + url + "'"
-            verified_url = self.verifier.complete(prompt)
+            prompt = "The following URL was collected with a microphone from a user. It might be noisy. If it seems like a valid url, repeat it back and don't say anything else. If not, provide the URL the user likely tried to navigate to, and nothing else. For example, if the URL is collected as 'https://www.Gotobbc.co.uk', the intended URL might have been 'https://www.bbc.co.uk'. Or if the URL was collected as 'https://www.visitwikipedia.org', the intended URL might have been 'https://www.wikipedia.org'. Either way, produce nothing but a precise URL. '" + url + "'"
+            verified_url_response = self.verifier.complete(prompt)
+            verified_url = verified_url_response.text
             self.agent.get(verified_url)
             
 
@@ -363,4 +365,4 @@ agent = WebAgent(world_model, action_engine)
 
 grad = GradioAgentDemo("", "", agent)
 grad.verifier = pixtral
-grad.launch(server_port=7900, share=True, debug=True)
+grad.launch(server_port=7901, share=True, debug=True)

@@ -105,6 +105,7 @@ class GradioAgentDemo:
     <div class='parent' align="center">
     <div class='child' style="display: inline-block !important;">
     <h1>LaNavigation</h1>
+    <div id="inputState" style="display: none;" url="empty" objective="empty"></div>
     </div>
     </div>
     """
@@ -116,35 +117,71 @@ class GradioAgentDemo:
     """
 
     js = """
-    function addAnimation() {
+function addAnimation() {
     // Listen for keydown events
     document.addEventListener('keydown', function(event) {
-        // Re-query the buttons every time to ensure up-to-date results
-        const buttons = document.querySelectorAll('.record.record-button.svelte-1d9m1oy');
-        console.log('Buttons:', buttons);
+        
+        // Get the input state element
+        const inputState = document.getElementById('inputState');
+        console.log(inputState);
+
         // Check if Shift + Spacebar is pressed
         if (event.code === 'Space' && event.shiftKey) {
             event.preventDefault(); // Prevent default space action (scrolling)
-            // Check if any buttons were found
-            if (buttons.length > 0) {
-                // Click the first button
-                buttons[0].click();
-                const closeButton = document.querySelector('.svelte-rk35yg.padded');
-                if (closeButton.length > 0) {
-                    closeButton[0].click();
+
+            // Get the current URL state
+            const urlState = inputState.getAttribute('url');
+
+            // Get buttons
+            const urlInput = document.querySelector('#url-input');
+            const urlButtons = urlInput.querySelectorAll('.record.record-button.svelte-1d9m1oy');
+            const urlButtonClose = urlInput.querySelectorAll('.svelte-rk35yg.padded');
+
+            console.log(urlInput, urlButtons, urlButtonClose);
+
+            if (urlState === 'empty') {
+                if (urlButtons.length > 0) {
+                    // Click the first button
+                    urlButtons[0].click();
+                    // Update the state to 'used'
+                    inputState.setAttribute('url', 'used'); // Fixed here to set on inputState
+                } else {
+                    console.log('No buttons found with the specified class.');
                 }
             } else {
-                console.log('No buttons found with the specified class.');
+                if (urlButtonClose.length > 0) {
+                    console.log('Closing the button...');
+                    urlButtonClose[0].click();
+
+                    // After closing, try to find and click the record button again
+                    const newUrlButtons = urlInput.querySelectorAll('.record.record-button.svelte-1d9m1oy');
+                    if (newUrlButtons.length > 0) {
+                        newUrlButtons[0].click();
+                    } else {
+                        console.log('No buttons found with the specified class.');
+                    }
+                } else {
+                    console.log('No close buttons found with the specified class.');
+                }
             }
         } 
         // Check if Shift + B is pressed
         else if (event.code === 'KeyB' && event.shiftKey) {
             event.preventDefault(); // Prevent default action
 
-            // Check if there are at least two buttons to avoid out-of-bound errors
-            if (buttons.length > 1) {
-                // Click the second button
-                buttons[1].click();
+            // Get objective state
+            const objectiveState = inputState.getAttribute('objective');
+
+            // Get buttons
+            const objectiveInput = document.querySelector('#objective-input');
+            const objectiveButtons = objectiveInput.querySelectorAll('.record.record-button.svelte-1d9m1oy');
+            const objectiveButtonClose = objectiveInput.querySelectorAll('.svelte-rk35yg.padded');
+
+            console.log(objectiveInput, objectiveButtons, objectiveButtonClose);
+
+            if (objectiveButtons.length > 0) {
+                // Click the first button
+                objectiveButtons[0].click();
             } else {
                 console.log('No second button found with the specified class.');
             }
@@ -161,7 +198,7 @@ class GradioAgentDemo:
                 console.log('No play-pause buttons found.');
             }
         }
-    });
+    }); // Added closing bracket for event listener
 }
     """
 
@@ -250,7 +287,7 @@ class GradioAgentDemo:
                 with gr.Row(equal_height=False):
                     with gr.Column():
                         with gr.Row():
-                            audio_input = gr.Audio(sources="microphone", elem_id="audio-input")
+                            audio_input = gr.Audio(sources="microphone", elem_id="url-input")
                         with gr.Row():
                             transcription_output = gr.Textbox(
                                 value=self.agent.action_engine.driver.get_url(),
@@ -262,7 +299,7 @@ class GradioAgentDemo:
                                 max_lines=1,
                             )
                         with gr.Row():
-                            audio_input_objective = gr.Audio(sources="microphone")
+                            audio_input_objective = gr.Audio(sources="microphone", elem_id="objective-input")
                         with gr.Row():
                             transcription_output_objective = gr.Textbox(
                                 value=self.objective,

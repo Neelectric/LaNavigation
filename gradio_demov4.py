@@ -2,7 +2,7 @@ from io import BytesIO
 import queue
 from typing import List, Optional
 from lavague.core import  WorldModel, ActionEngine
-from lavague.core.agents import WebAgent
+from lavague.core.agents import WebAgent, logging_print
 import gradio as gr
 from PIL import Image
 from lavague.contexts.gemini import GeminiContext
@@ -170,9 +170,9 @@ class GradioAgentDemo:
             )
             history.append(msg)
 
-            print(history)
-            filename = generate_and_play_tts(history[-1].content)
-            audio_file = gr.Audio(value=filename, autoplay=True, label="Play Audio File", visible=True)
+            print(logging_print)
+            # filename = generate_and_play_tts(history_global[-1].content)
+            # audio_file = gr.Audio(value=filename, autoplay=True, label="Play Audio File", visible=True)
 
             yield objective, url_input, image_display, history, audio_file
             self.agent.action_engine.set_gradio_mode_all(

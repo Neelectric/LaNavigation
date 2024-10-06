@@ -120,7 +120,7 @@ class GradioAgentDemo:
             if (event.code === 'Space') {
                 event.preventDefault(); // Prevent the default space action (scrolling)
                 console.log('Spacebar pressed');
-                gradioApp().getElementById('audio-input').submit();
+                document().getElementById('audio-input').submit();
             }
             return 'Animation created';
         });
@@ -252,6 +252,11 @@ class GradioAgentDemo:
                             layout="bubble",
                         )
 
+                print(chatbot.value)
+                if len(chatbot.value) > 0:
+                    filename = generate_and_play_tts(chatbot[-1].content)
+                    audio_file = gr.Audio(value="filename", autoplay=True, label="Play Audio File", visible=True)
+
                 # Automatically submit the transcription after it's received
                 audio_input.change(fn=transcribe, inputs=audio_input, outputs=transcription_output).then(
                     self._init_driver(),
@@ -282,8 +287,6 @@ class GradioAgentDemo:
                         chatbot,
                     ],
                 )
-
-                audio_file = gr.Audio(value="welcome.mp3", autoplay=True, label="Play Audio File", visible=True)
 
                 if self.agent.driver.get_url() is not None:
                     demo.load(
@@ -325,4 +328,4 @@ action_engine = ActionEngine(driver=selenium_driver, llm=llm, embedding=embed_mo
 agent = WebAgent(world_model, action_engine)
 
 grad = GradioAgentDemo("", "", agent)
-grad.launch(server_port=7894, share=True, debug=True)
+grad.launch(server_port=7895, share=True, debug=True)

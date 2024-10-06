@@ -120,7 +120,7 @@ class GradioAgentDemo:
             if (event.code === 'Space') {
                 event.preventDefault(); // Prevent the default space action (scrolling)
                 console.log('Spacebar pressed');
-                gradioApp().getElementById('audio-input').submit();
+                document.getElementById('audio-input').submit();
             }
             return 'Animation created';
         });

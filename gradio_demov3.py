@@ -1,39 +1,33 @@
 import gradio as gr
-from transformers import pipeline
-import numpy as np
 
-transcriber = pipeline("automatic-speech-recognition", model="openai/whisper-base.en")
+# Function that returns an HTML audio element
+def play_audio():
+    audio_html = """
+    <audio controls>
+      <source src="welcome.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+    """
+    return audio_html
 
-def transcribe(audio):
-    sr, y = audio
-    
-    # Convert to mono if stereo
-    if y.ndim > 1:
-        y = y.mean(axis=1)
-        
-    y = y.astype(np.float32)
-    y /= np.max(np.abs(y))
-
-    return transcriber({"sampling_rate": sr, "raw": y})["text"]  
-
-def change_textbox(choice):
-    if choice == "short":
-        return gr.Textbox(lines=2, visible=True)
-    elif choice == "long":
-        return gr.Textbox(lines=8, visible=True, value="Lorem ipsum dolor sit amet")
-    else:
-        return gr.Textbox(visible=False)
-
-with gr.Blocks() as demo:
-    radio = gr.Radio(
-        ["short", "long", "none"], label="What kind of essay would you like to write?"
-    )
-    text = gr.Textbox(lines=2, interactive=True, show_copy_button=True)
-    radio.change(fn=change_textbox, inputs=radio, outputs=text)
-    gr.Interface(
-    transcribe,
-    gr.Audio(sources="microphone"),
-    text,
+# Create the Gradio interface
+app = gr.Interface(
+    fn=play_audio, 
+    inputs=[], 
+    outputs="html", 
+    title="Audio Player",
+    description="Press the button to play audio."
 )
 
-demo.launch()
+import os
+
+# Get the current working directory
+directory_path = os.getcwd()
+
+# List all files in the current directory
+for filename in os.listdir(directory_path):
+    if os.path.isfile(os.path.join(directory_path, filename)):
+        print(filename)
+
+# Launch the app
+app.launch()

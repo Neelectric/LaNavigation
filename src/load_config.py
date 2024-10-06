@@ -13,3 +13,10 @@ def load_key(key, file='Neel_config.yaml'):
     # Access the API keys
     key_val = config['api_keys'][key]
     return key_val
+
+def load_key_Titas(key, file='Titas_config.yaml'):
+    config = load_config("configs/" + file)
+
+    # Access the API keys
+    key_val = config['api_keys'][key]
+    return key_val

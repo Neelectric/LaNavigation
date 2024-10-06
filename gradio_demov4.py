@@ -16,12 +16,36 @@ from llama_index.multi_modal_llms.gemini import GeminiMultiModal
 from llama_index.embeddings.mistralai import MistralAIEmbedding
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from lavague.core.context import Context
-from src.load_config import load_key
+from src.load_config import load_key, load_key_Titas
 from src.pixtral_wrapper import PixtralWrapper
 from lavague.drivers.selenium import SeleniumDriver
 from lavague.core import WorldModel, ActionEngine, PythonEngine
 
 transcriber = pipeline("automatic-speech-recognition", model="openai/whisper-base.en", device=0)
+
+def spacebar_pressed(name):
+    return f"Hello, {name}! You pressed the spacebar!"
+
+def enter_pressed(name):
+    return f"Hello, {name}! You pressed the enter key!"
+
+from pyt2s.services import stream_elements
+from pydub import AudioSegment
+from pydub.playback import play
+
+def generate_and_play_tts(text, filename='welcome.mp3'):
+    # Request TTS data from the stream_elements service
+    data = stream_elements.requestTTS(text)
+
+    # Write the audio data to an MP3 file
+    with open(filename, 'wb') as file:
+        file.write(data)
+
+    return filename
+
+def load_and_play_audio():
+    audio_file = generate_and_play_tts("Hello")
+    return gr.Audio.update(value=audio_file, autoplay=True)
 
 def transcribe(audio):
     sr, y = audio
@@ -76,10 +100,7 @@ class GradioAgentDemo:
     title = """
     <div class='parent' align="center">
     <div class='child' style="display: inline-block !important;">
-    <img src="https://raw.githubusercontent.com/lavague-ai/LaVague/new_gradio/docs/assets/logo.png" width=40px/>
-    </div>
-    <div class='child' style="display: inline-block !important;">
-    <h1>LaVague</h1>
+    <h1>LaNavigation</h1>
     </div>
     </div>
     """
@@ -88,6 +109,24 @@ class GradioAgentDemo:
     <div align="center">
     <h3>Steps</h3>
     </div>
+    """
+
+    js = """
+    // Function to add the animation when the spacebar is pressed
+    function addAnimation() {
+        // Listen for keydown events
+        document.addEventListener('keydown', function(event) {
+            // Check if the pressed key is the spacebar (key code 32)
+            if (event.code === 'Space') {
+                event.preventDefault(); // Prevent the default space action (scrolling)
+                console.log('Spacebar pressed');
+                //if (name) {
+                    //gradioApp().getElementById('output-textbox').innerText = greet_on_space(name);
+                //}
+            }
+            return 'Animation created';
+        });
+    }
     """
 
     def __init__(
@@ -107,7 +146,6 @@ class GradioAgentDemo:
 
     def _init_driver(self):
         def init_driver_impl(url, img):
-            print(url)
             self.agent.get(url)
 
             ret = self.agent.action_engine.driver.get_screenshot_as_png()
@@ -139,6 +177,7 @@ class GradioAgentDemo:
                 history,
                 self.screenshot_ratio,
             )
+
             return objective, url_input, image_display, history
 
         return process_instructions_impl
@@ -166,7 +205,7 @@ class GradioAgentDemo:
 
     def launch(self, server_port=7860, share=True, debug=True):
         with gr.Blocks(
-            gr.themes.Default(primary_hue="blue", secondary_hue="neutral"), css=self.css
+            gr.themes.Default(primary_hue="blue", secondary_hue="neutral"), css=self.css, js=self.js
         ) as demo:
             with gr.Tab(""):
                 with gr.Row():
@@ -175,22 +214,26 @@ class GradioAgentDemo:
                 with gr.Row(equal_height=False):
                     with gr.Column():
                         with gr.Row():
-                            audio_input = gr.Audio(sources="microphone", label="Record Audio")
+                            audio_input = gr.Audio(sources="microphone")
+                        with gr.Row():
                             transcription_output = gr.Textbox(
                                 value=self.agent.action_engine.driver.get_url(),
                                 scale=9,
                                 type="text",
-                                label="The transcribed URL will appear here...",
+                                placeholder="The transcribed URL will appear here...",
+                                label="URL",
                                 visible=True,
                                 max_lines=1,
                             )
                         with gr.Row():
-                            audio_input_objective = gr.Audio(sources="microphone", label="Record Audio Objective")
+                            audio_input_objective = gr.Audio(sources="microphone")
+                        with gr.Row():
                             transcription_output_objective = gr.Textbox(
                                 value=self.objective,
                                 scale=9,
                                 type="text",
-                                label="The transcribed objective will appear here...",
+                                placeholder="The transcribed objective will appear here...",
+                                label="Objective",
                                 visible=True,
                                 max_lines=1,
                             )
@@ -210,19 +253,12 @@ class GradioAgentDemo:
                             placeholder="Agent output will be shown here\n",
                             layout="bubble",
                         )
-                # Use the image_updater generator function
-                # submission handling
-                # audio_input.change(fn=transcribe, inputs=audio_input, outputs=transcription_output).then(
-                #     self._init_driver(),
-                #     inputs=[audio_input, transcription_output],
-                #     outputs=[audio_input],
-                # )
-                # objective submission handling
+
                 # Automatically submit the transcription after it's received
                 audio_input.change(fn=transcribe, inputs=audio_input, outputs=transcription_output).then(
                     self._init_driver(),
-                    inputs=[transcription_output],
-                    outputs=[transcription_output],
+                    inputs=[transcription_output, image_display],
+                    outputs=[transcription_output, image_display],
                 )
                 
                 audio_input_objective.change(
@@ -248,6 +284,7 @@ class GradioAgentDemo:
                         chatbot,
                     ],
                 )
+
                 if self.agent.driver.get_url() is not None:
                     demo.load(
                         fn=self.refresh_img_dislay,
@@ -260,7 +297,7 @@ class GradioAgentDemo:
 
 
 mistral_api_key = load_key("mistral_key", file='Neel_config.yaml')
-google_api_key = load_key("google_key", file='Neel_config.yaml')
+google_api_key = load_key_Titas("google_key", file='Titas_config.yaml')
 
 selenium_driver = SeleniumDriver()
 llm = MistralAI(model="mistral-large-latest", api_key=mistral_api_key, temperature=0.01)
@@ -281,11 +318,11 @@ python_engine = PythonEngine(
 # Initialize a WorldModel and ActionEngine passing them your models
 world_model = WorldModel(mm_llm=mm_llm)
 action_engine = ActionEngine(driver=selenium_driver, llm=llm, embedding=embed_model, python_engine=python_engine)
-context.action_engine = action_engine
-context.driver = selenium_driver
+# context.action_engine = action_engine
+# context.driver = selenium_driver
 
 # Build agent & run query
 agent = WebAgent(world_model, action_engine)
 
-grad = GradioAgentDemo("", selenium_driver, context)
-grad.launch(server_port=7891, share=True, debug=True)
+grad = GradioAgentDemo("", "", agent)
+grad.launch(server_port=7892, share=True, debug=True)

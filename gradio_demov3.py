@@ -1,5 +1,6 @@
 from io import BytesIO
 import queue
+import os
 from typing import List, Optional
 from lavague.core import  WorldModel, ActionEngine
 from lavague.core.agents import WebAgent
@@ -20,6 +21,7 @@ from src.load_config import load_key, load_key_Titas
 from src.pixtral_wrapper import PixtralWrapper
 from lavague.drivers.selenium import SeleniumDriver
 from lavague.core import WorldModel, ActionEngine, PythonEngine
+from llama_index.multi_modal_llms.mistralai import MistralAIMultiModal
 
 transcriber = pipeline("automatic-speech-recognition", model="openai/whisper-base.en", device=0)
 
@@ -436,13 +438,21 @@ function handleKeyboardEvents() {
 
 
 mistral_api_key = load_key("mistral_key", file='Neel_config.yaml')
-google_api_key = load_key_Titas("google_key", file='Titas_config.yaml')
+# google_api_key = load_key_Titas("google_key", file='Titas_config.yaml')
+google_api_key = load_key("google_key", file='Neel_config.yaml')
 
 selenium_driver = SeleniumDriver()
 llm = MistralAI(model="mistral-large-latest", api_key=mistral_api_key, temperature=0.01)
 # llm = Gemini(model_name="models/gemini-1.5-flash-latest", temperature=0.01)
-mm_llm = GeminiMultiModal(model_name="models/gemini-1.5-flash-latest", api_key=google_api_key, temperature=0.01)
-pixtral = PixtralWrapper()
+
+mm_llm = GeminiMultiModal(model_name="models/gemini-1.5-flash-latest", api_key=google_api_key, temperature=0.01, )
+# pixtral = PixtralWrapper()
+os.environ[
+    "MISTRAL_API_KEY"
+] = mistral_api_key
+pixtral = MistralAIMultiModal(
+    model="pixtral-12b-2409", max_new_tokens=300
+)
 embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-large-en-v1.5")
 
 context = Context(llm, mm_llm=mm_llm, embedding=embed_model)

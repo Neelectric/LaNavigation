@@ -104,7 +104,10 @@ class GradioAgentDemo:
     title = """
     <div class='parent' align="center">
     <div class='child' style="display: inline-block !important;">
-    <h1>LaNavigation</h1>
+    <div style="display: flex; align-items: center;">
+    <img src="/file/announcing-mistral.png" width="100px" style="margin-right: 10px;" />
+    <h1 style="font-size: 48px;">LaNavigation</h1>
+    </div>
     <div id="inputState" style="display: none;" url="empty" objective="empty"></div>
     </div>
     </div>
@@ -270,13 +273,17 @@ function handleKeyboardEvents() {
 
     def _init_driver(self):
         def init_driver_impl(url, img):
-            self.agent.get(url)
+            prompt = "The following URL was collected with a microphone from a user. It might be noisy. If it seems like a valid url, repeat it back and don't say anything else. If not, provide the URL the user likely tried to navigate to, and nothing else. For example, if the URL is collected as 'https://www.Gotobbc.co.uk', the intended URL might have been 'https://www.bbc.co.uk'. Or if the URL was collected as 'https://www.visitwikipedia.org', the intended URL might have been 'https://www.wikipedia.org'. Either way, produce nothing but a precise URL. '" + url + "'"
+            verified_url_response = self.verifier.complete(prompt)
+            verified_url = verified_url_response.text
+            self.agent.get(verified_url)
+            
 
             ret = self.agent.action_engine.driver.get_screenshot_as_png()
             ret = BytesIO(ret)
             ret = Image.open(ret)
             img = ret
-            return url, img
+            return verified_url, img
 
         return init_driver_impl
 
@@ -418,7 +425,7 @@ function handleKeyboardEvents() {
                         outputs=[transcription_output, image_display],
                         show_progress=False,
                     )
-        demo.launch(server_port=server_port, share=True, debug=True)
+        demo.launch(server_port=server_port, share=True, debug=True, allowed_paths=["announcing-mistral.png"])
 
 
 
@@ -429,7 +436,7 @@ selenium_driver = SeleniumDriver()
 llm = MistralAI(model="mistral-large-latest", api_key=mistral_api_key, temperature=0.01)
 # llm = Gemini(model_name="models/gemini-1.5-flash-latest", temperature=0.01)
 mm_llm = GeminiMultiModal(model_name="models/gemini-1.5-flash-latest", api_key=google_api_key, temperature=0.01)
-# llm = PixtralWrapper()
+pixtral = PixtralWrapper()
 embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-large-en-v1.5")
 
 context = Context(llm, mm_llm=mm_llm, embedding=embed_model)
@@ -451,4 +458,5 @@ action_engine = ActionEngine(driver=selenium_driver, llm=llm, embedding=embed_mo
 agent = WebAgent(world_model, action_engine)
 
 grad = GradioAgentDemo("", "", agent)
-grad.launch(server_port=7899, share=True, debug=True)
+grad.verifier = pixtral
+grad.launch(server_port=7901, share=True, debug=True)

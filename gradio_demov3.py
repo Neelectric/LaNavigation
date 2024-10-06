@@ -446,6 +446,7 @@ llm = MistralAI(model="mistral-large-latest", api_key=mistral_api_key, temperatu
 # llm = Gemini(model_name="models/gemini-1.5-flash-latest", temperature=0.01)
 
 mm_llm = GeminiMultiModal(model_name="models/gemini-1.5-flash-latest", api_key=google_api_key, temperature=0.01, )
+mm_llm.__pydantic_private__ = None
 # pixtral = PixtralWrapper()
 os.environ[
     "MISTRAL_API_KEY"

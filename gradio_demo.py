@@ -14,6 +14,15 @@ from PIL import Image
 from gherkin.parser import Parser
 from urllib.parse import urlparse
 
+from llama_index.llms.mistralai import MistralAI
+from llama_index.llms.gemini import Gemini
+from llama_index.multi_modal_llms.gemini import GeminiMultiModal
+from llama_index.embeddings.mistralai import MistralAIEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from lavague.core.context import Context
+from src.load_config import load_key
+from src.pixtral_wrapper import PixtralWrapper
+
 
 def uri_validator(x):
     try:
@@ -436,5 +445,18 @@ class GradioQADemo:
         demo.launch(server_port=server_port, share=True, debug=True)
 
 
-grad = GradioQADemo("", None, None)
+
+
+mistral_api_key = load_key("mistral_key", file='Neel_config.yaml')
+google_api_key = load_key("google_key", file='Neel_config.yaml')
+
+selenium_driver = SeleniumDriver()
+llm = MistralAI(model="mistral-large-latest", api_key=mistral_api_key, temperature=0.01)
+# llm = Gemini(model_name="models/gemini-1.5-flash-latest", temperature=0.01)
+mm_llm = GeminiMultiModal(model_name="models/gemini-1.5-flash-latest", api_key=google_api_key, temperature=0.01)
+# llm = PixtralWrapper()
+embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-large-en-v1.5")
+context = Context(llm, mm_llm=mm_llm, embedding=embed_model)
+
+grad = GradioQADemo("", selenium_driver, context)
 grad.launch()

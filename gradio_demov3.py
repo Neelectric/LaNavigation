@@ -1,33 +1,25 @@
+import numpy as np
+
 import gradio as gr
 
-# Function that returns an HTML audio element
-def play_audio():
-    audio_html = """
-    <audio controls>
-      <source src="welcome.mp3" type="audio/mpeg">
-      Your browser does not support the audio element.
-    </audio>
-    """
-    return audio_html
+def reverse_audio(audio):
+    sr, data = audio
+    return (sr, np.flipud(data))
 
-# Create the Gradio interface
-app = gr.Interface(
-    fn=play_audio, 
-    inputs=[], 
-    outputs="html", 
-    title="Audio Player",
-    description="Press the button to play audio."
+input_audio = gr.Audio(
+    sources=["microphone"],
+    waveform_options=gr.WaveformOptions(
+        waveform_color="#01C6FF",
+        waveform_progress_color="#0066B4",
+        skip_length=2,
+        show_controls=False,
+    ),
+)
+demo = gr.Interface(
+    fn=reverse_audio,
+    inputs=input_audio,
+    outputs="audio"
 )
 
-import os
-
-# Get the current working directory
-directory_path = os.getcwd()
-
-# List all files in the current directory
-for filename in os.listdir(directory_path):
-    if os.path.isfile(os.path.join(directory_path, filename)):
-        print(filename)
-
-# Launch the app
-app.launch()
+if __name__ == "__main__":
+    demo.launch()

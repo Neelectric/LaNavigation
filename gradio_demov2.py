@@ -16,24 +16,6 @@ from src.pixtral_wrapper import PixtralWrapper
 from lavague.drivers.selenium import SeleniumDriver
 from lavague.core import WorldModel, ActionEngine, PythonEngine
 
-from transformers import pipeline
-import numpy as np
-
-transcriber = pipeline("automatic-speech-recognition", model="openai/whisper-base.en", device=0)
-
-def transcribe(audio):
-    sr, y = audio
-    
-    # Convert to mono if stereo
-    if y.ndim > 1:
-        y = y.mean(axis=1)
-        
-    y = y.astype(np.float32)
-    y /= np.max(np.abs(y))
-
-    return transcriber({"sampling_rate": sr, "raw": y})["text"]
-
-
 
 class GradioAgentDemo:
     """
@@ -64,9 +46,10 @@ class GradioAgentDemo:
     title = """
     <div class='parent' align="center">
     <div class='child' style="display: inline-block !important;">
+    <img src="https://raw.githubusercontent.com/lavague-ai/LaVague/new_gradio/docs/assets/logo.png" width=40px/>
     </div>
     <div class='child' style="display: inline-block !important;">
-    <h1>LaNavigation</h1>
+    <h1>LaVague</h1>
     </div>
     </div>
     """
@@ -93,7 +76,6 @@ class GradioAgentDemo:
         self.screenshot_ratio = screenshot_ratio
 
     def _init_driver(self):
-        print("Neel init driver")
         def init_driver_impl(url, img):
             self.agent.action_engine.driver.get(url)
 
@@ -106,7 +88,6 @@ class GradioAgentDemo:
         return init_driver_impl
 
     def _process_instructions(self):
-        print("Neel process instructions")
         def process_instructions_impl(objective, url_input, image_display, history):
             msg = gr.ChatMessage(
                 role="assistant", content="⏳ Thinking of next steps..."
@@ -132,7 +113,6 @@ class GradioAgentDemo:
         return process_instructions_impl
 
     def __add_message(self):
-        print("Neel add message")
         def add_message(history, message):
             history.clear()
             return history
@@ -140,7 +120,6 @@ class GradioAgentDemo:
         return add_message
 
     def refresh_img_dislay(self, url, image_display):
-        print("Neel refresh img display")
         img = self.agent.driver.get_screenshot_as_png()
         img = BytesIO(img)
         img = Image.open(img)
@@ -154,7 +133,7 @@ class GradioAgentDemo:
         image_display = img
         return url, image_display
 
-    def launch(self, server_port=7861, share=True, debug=True):
+    def launch(self, server_port=7860, share=True, debug=True):
         with gr.Blocks(
             gr.themes.Default(primary_hue="blue", secondary_hue="neutral"), css=self.css
         ) as demo:
@@ -164,25 +143,30 @@ class GradioAgentDemo:
 
                 with gr.Row(equal_height=False):
                     with gr.Column():
-                        audio_input = gr.Audio(sources="microphone")
                         with gr.Row():
-                            url_input = gr.Textbox(
+                            with gr.Tabs(
+                                selected=1
+                                if self.agent.action_engine.driver.get_url() is not None
+                                else 0
+                            ) as tabs:
+                                with gr.Tab("URL", id=0):
+                                    url_input = gr.Textbox(
                                         value=self.agent.action_engine.driver.get_url(),
                                         scale=9,
                                         type="text",
-                                        label="URL input.",
+                                        label="Enter URL and press 'Enter' to load the page.",
                                         visible=True,
                                         max_lines=1,
                                     )
-                            objective_input = gr.Textbox(
+                                with gr.Tab("Objective", id=1) as tab:
+                                    objective_input = gr.Textbox(
                                         value=self.objective,
                                         scale=9,
                                         type="text",
-                                        label="Objective input.",
+                                        label="Enter the objective and press 'Enter' to start processing it.",
                                         visible=True,
                                         max_lines=1,
                                     )
-                                                        
                 with gr.Row(variant="panel", equal_height=True):
                     with gr.Column(scale=8):
                         image_display = gr.Image(
@@ -221,19 +205,12 @@ class GradioAgentDemo:
                 )
                 # Use the image_updater generator function
                 # submission handling
-
-                def url_fix(text):
-                    url_input.update(value=fixed_url)
-                    url_input.submit(
-                        self._init_driver(),
-                        inputs=[url_input, image_display],
-                        outputs=[url_input, image_display],
-                    )
-
-                audio_input.change(transcribe, inputs=[audio_input], outputs=[url_input]).then(url_fix, inputs=[url_input], outputs=None)
-                
+                url_input.submit(
+                    self._init_driver(),
+                    inputs=[url_input, image_display],
+                    outputs=[url_input, image_display],
+                )
                 if self.agent.driver.get_url() is not None:
-                    print(self.agent.driver.get_url())
                     demo.load(
                         fn=self.refresh_img_dislay,
                         inputs=[url_input, image_display],
@@ -247,8 +224,8 @@ mistral_api_key = load_key("mistral_key", file='Neel_config.yaml')
 google_api_key = load_key("google_key", file='Neel_config.yaml')
 
 selenium_driver = SeleniumDriver()
-# llm = MistralAI(model="mistral-large-latest", api_key=mistral_api_key, temperature=0.01)
-llm = Gemini(model_name="models/gemini-1.5-flash-latest", api_key=google_api_key, temperature=0.01)
+llm = MistralAI(model="mistral-large-latest", api_key=mistral_api_key, temperature=0.01)
+# llm = Gemini(model_name="models/gemini-1.5-flash-latest", temperature=0.01)
 mm_llm = GeminiMultiModal(model_name="models/gemini-1.5-flash-latest", api_key=google_api_key, temperature=0.01)
 # llm = PixtralWrapper()
 embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-large-en-v1.5")
@@ -267,7 +244,5 @@ action_engine = ActionEngine(driver=selenium_driver, llm=llm, embedding=embed_mo
 context.action_engine = action_engine
 context.driver = selenium_driver
 
-agent = WebAgent(world_model, action_engine)
-
-grad = GradioAgentDemo("", context, agent=agent)
-grad.launch(server_port=7861, share=False, debug=True)
+grad = GradioAgentDemo("", selenium_driver, context)
+grad.launch()

@@ -10,6 +10,17 @@ from lavague.drivers.selenium import SeleniumDriver
 import numpy as np
 from transformers import pipeline
 
+from llama_index.llms.mistralai import MistralAI
+from llama_index.llms.gemini import Gemini
+from llama_index.multi_modal_llms.gemini import GeminiMultiModal
+from llama_index.embeddings.mistralai import MistralAIEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from lavague.core.context import Context
+from src.load_config import load_key
+from src.pixtral_wrapper import PixtralWrapper
+from lavague.drivers.selenium import SeleniumDriver
+from lavague.core import WorldModel, ActionEngine, PythonEngine
+
 transcriber = pipeline("automatic-speech-recognition", model="openai/whisper-base.en", device=0)
 
 def transcribe(audio):
@@ -22,7 +33,19 @@ def transcribe(audio):
     y = y.astype(np.float32)
     y /= np.max(np.abs(y))
 
-    return transcriber({"sampling_rate": sr, "raw": y})["text"]  
+    return "https://www." + transcriber({"sampling_rate": sr, "raw": y})["text"].strip(".").replace(" ", "")
+
+def transcribe_objective(audio):
+    sr, y = audio
+    
+    # Convert to mono if stereo
+    if y.ndim > 1:
+        y = y.mean(axis=1)
+        
+    y = y.astype(np.float32)
+    y /= np.max(np.abs(y))
+
+    return transcriber({"sampling_rate": sr, "raw": y})["text"]
 
 class GradioAgentDemo:
     """
@@ -152,41 +175,25 @@ class GradioAgentDemo:
                 with gr.Row(equal_height=False):
                     with gr.Column():
                         with gr.Row():
-                            with gr.Tabs(
-                                selected=1
-                                if self.agent.action_engine.driver.get_url() is not None
-                                else 0
-                            ) as tabs:
-                                with gr.Tab("URL", id=0):
-                                    audio_input = gr.Audio(sources="microphone", label="Record Audio")
-                                    url_input = gr.Textbox(
-                                        value=self.agent.action_engine.driver.get_url(),
-                                        scale=9,
-                                        type="text",
-                                        label="Enter URL and press 'Enter' to load the page.",
-                                        visible=True,
-                                        max_lines=1,
-                                    )
-
-                                    # Add Whisper transcription inside the URL tab
-                                    transcription_output = gr.Textbox(label="Transcription", placeholder="Transcription will appear here...")
-
-                                    # Automatically submit the transcription after it's received
-                                    audio_input.change(fn=transcribe, inputs=audio_input, outputs=transcription_output).then(
-                                        self._init_driver(),
-                                        inputs=[url_input, transcription_output],
-                                        outputs=[url_input],
-                                    )
-
-                                with gr.Tab("Objective", id=1) as tab:
-                                    objective_input = gr.Textbox(
-                                        value=self.objective,
-                                        scale=9,
-                                        type="text",
-                                        label="Enter the objective and press 'Enter' to start processing it.",
-                                        visible=True,
-                                        max_lines=1,
-                                    )
+                            audio_input = gr.Audio(sources="microphone", label="Record Audio")
+                            transcription_output = gr.Textbox(
+                                value=self.agent.action_engine.driver.get_url(),
+                                scale=9,
+                                type="text",
+                                label="The transcribed URL will appear here...",
+                                visible=True,
+                                max_lines=1,
+                            )
+                        with gr.Row():
+                            audio_input_objective = gr.Audio(sources="microphone", label="Record Audio Objective")
+                            transcription_output_objective = gr.Textbox(
+                                value=self.objective,
+                                scale=9,
+                                type="text",
+                                label="The transcribed objective will appear here...",
+                                visible=True,
+                                max_lines=1,
+                            )
                 with gr.Row(variant="panel", equal_height=True):
                     with gr.Column(scale=8):
                         image_display = gr.Image(
@@ -203,74 +210,82 @@ class GradioAgentDemo:
                             placeholder="Agent output will be shown here\n",
                             layout="bubble",
                         )
-                    with gr.Column(scale=2):
-
-                        # Function to return the path to the .wav file
-                        def play_audio():
-                            return "audio.wav"
-
-                        # Create the Gradio interface with an audio player
-                        audio_interface = gr.Interface(
-                            fn=play_audio,                # Function that returns the audio file path
-                            inputs=None,                  # No input needed to play the audio
-                            outputs=gr.Audio(type="filepath"),  # Output is an audio component
-                            title="Audio Player",
-                            description="Play the specified .wav file."
-                        )
-
-                        # Launch the Gradio app
-                        audio_interface.launch()
-
+                # Use the image_updater generator function
+                # submission handling
+                # audio_input.change(fn=transcribe, inputs=audio_input, outputs=transcription_output).then(
+                #     self._init_driver(),
+                #     inputs=[audio_input, transcription_output],
+                #     outputs=[audio_input],
+                # )
                 # objective submission handling
-                objective_input.submit(
+                # Automatically submit the transcription after it's received
+                audio_input.change(fn=transcribe, inputs=audio_input, outputs=transcription_output).then(
+                    self._init_driver(),
+                    inputs=[transcription_output],
+                    outputs=[transcription_output],
+                )
+                
+                audio_input_objective.change(
+                    fn=transcribe_objective,
+                    inputs=audio_input_objective,
+                    outputs=transcription_output_objective,
+                ).then(
                     self.__add_message(),
-                    inputs=[chatbot, objective_input],
+                    inputs=[chatbot, transcription_output_objective],
                     outputs=[chatbot],
                 ).then(
                     self._process_instructions(),
                     inputs=[
-                        objective_input,
-                        url_input,
+                        transcription_output_objective,
+                        transcription_output,
                         image_display,
                         chatbot,
                     ],
                     outputs=[
-                        objective_input,
-                        url_input,
+                        transcription_output_objective,
+                        transcription_output,
                         image_display,
                         chatbot,
                     ],
                 )
-                # Use the image_updater generator function
-                # submission handling
-                url_input.submit(
-                    self._init_driver(),
-                    inputs=[url_input, image_display],
-                    outputs=[url_input, image_display],
-                )
                 if self.agent.driver.get_url() is not None:
                     demo.load(
                         fn=self.refresh_img_dislay,
-                        inputs=[url_input, image_display],
-                        outputs=[url_input, image_display],
+                        inputs=[transcription_output, image_display],
+                        outputs=[transcription_output, image_display],
                         show_progress=False,
                     )
         demo.launch(server_port=server_port, share=True, debug=True)
 
-import os
-os.environ["GOOGLE_API_KEY"] = "AIzaSyDjqKyOB6qHDoZOFCUAra6fowekevCotF0"
 
-context = GeminiContext(llm="models/gemini-1.5-flash-latest", mm_llm="models/gemini-1.5-flash-latest")
+
+mistral_api_key = load_key("mistral_key", file='Neel_config.yaml')
+google_api_key = load_key("google_key", file='Neel_config.yaml')
+
 selenium_driver = SeleniumDriver()
+llm = MistralAI(model="mistral-large-latest", api_key=mistral_api_key, temperature=0.01)
+# llm = Gemini(model_name="models/gemini-1.5-flash-latest", temperature=0.01)
+mm_llm = GeminiMultiModal(model_name="models/gemini-1.5-flash-latest", api_key=google_api_key, temperature=0.01)
+# llm = PixtralWrapper()
+embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-large-en-v1.5")
 
-# Build Action Engine and World Model from Context
-action_engine = ActionEngine.from_context(context=context, driver=selenium_driver)
-world_model = WorldModel.from_context(context)
+context = Context(llm, mm_llm=mm_llm, embedding=embed_model)
+
+python_engine = PythonEngine(
+    driver=selenium_driver,
+    llm=llm,
+    embedding=embed_model,
+    ocr_mm_llm=mm_llm
+    )
+
+# Initialize a WorldModel and ActionEngine passing them your models
+world_model = WorldModel(mm_llm=mm_llm)
+action_engine = ActionEngine(driver=selenium_driver, llm=llm, embedding=embed_model, python_engine=python_engine)
+context.action_engine = action_engine
+context.driver = selenium_driver
 
 # Build agent & run query
 agent = WebAgent(world_model, action_engine)
 
-# agent.get("https://www.google.com")
-
-grad = GradioAgentDemo("Describe this page", "", agent)
-grad.launch(server_port=7880, share=True, debug=True)
+grad = GradioAgentDemo("", selenium_driver, context)
+grad.launch(server_port=7891, share=True, debug=True)

@@ -6,7 +6,6 @@ from lavague.core import  WorldModel, ActionEngine
 from lavague.core.agents import WebAgent
 import gradio as gr
 from PIL import Image
-from lavague.contexts.gemini import GeminiContext
 from lavague.drivers.selenium import SeleniumDriver
 import numpy as np
 from transformers import pipeline
@@ -268,7 +267,7 @@ function handleKeyboardEvents() {
     def _init_driver(self):
         def init_driver_impl(url, img):
             prompt = "The following URL was collected with a microphone from a user. It might be noisy. If it seems like a valid url, repeat it back and don't say anything else. If not, provide the URL the user likely tried to navigate to, and nothing else. For example, if the URL is collected as 'https://www.Gotobbc.co.uk', the intended URL might have been 'https://www.bbc.co.uk'. Or if the URL was collected as 'https://www.visitwikipedia.org', the intended URL might have been 'https://www.wikipedia.org'. Either way, produce nothing but a precise URL. '" + url + "'"
-            verified_url_response = self.verifier.complete(prompt)
+            verified_url_response = self.verifier.complete(prompt, image_documents=[])
             verified_url = verified_url_response.text
             self.agent.get(verified_url)
             
@@ -446,15 +445,15 @@ llm = MistralAI(model="mistral-large-latest", api_key=mistral_api_key, temperatu
 # llm = Gemini(model_name="models/gemini-1.5-flash-latest", temperature=0.01)
 
 mm_llm = GeminiMultiModal(model_name="models/gemini-1.5-flash-latest", api_key=google_api_key, temperature=0.01, )
-mm_llm.__pydantic_private__ = None
+# mm_llm.__pydantic_private__ = None
 # pixtral = PixtralWrapper()
-os.environ[
-    "MISTRAL_API_KEY"
-] = mistral_api_key
-pixtral = MistralAIMultiModal(
-    model="pixtral-12b-2409", max_new_tokens=300
-)
+os.environ["MISTRAL_API_KEY"] = mistral_api_key
+# pixtral = MistralAIMultiModal(
+#     model="pixtral-12b-2409", max_new_tokens=300
+# )
 embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-large-en-v1.5")
+model_name = "mistral-embed"
+# embed_model = MistralAIEmbedding(model_name=model_name, api_key=mistral_api_key)
 
 context = Context(llm, mm_llm=mm_llm, embedding=embed_model)
 
@@ -475,5 +474,5 @@ action_engine = ActionEngine(driver=selenium_driver, llm=llm, embedding=embed_mo
 agent = WebAgent(world_model, action_engine)
 
 grad = GradioAgentDemo("", "", agent)
-grad.verifier = pixtral
-grad.launch(server_port=8502, share=True, debug=True)
+grad.verifier = mm_llm
+grad.launch(server_port=8503, share=True, debug=True)
